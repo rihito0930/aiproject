@@ -1,0 +1,183 @@
+import os, textwrap, zipfile
+
+app_code = r'''import streamlit as st
+import folium
+from streamlit_folium import st_folium
+
+# ---------------------------------------
+# 서울 인기 관광지 TOP 10 지도 앱
+# ---------------------------------------
+st.set_page_config(
+    page_title="서울 관광 명소 TOP 10",
+    page_icon="🗺️",
+    layout="wide"
+)
+
+st.title("🗺️ 외국인 여행자를 위한 서울 관광 명소 TOP 10")
+st.write("서울의 대표 관광지를 지도에서 확인하고, 각 장소의 매력을 알아보세요!")
+
+# 관광지 이름, 설명, 좌표
+# 좌표는 지도 표시를 위한 대표 위치입니다.
+places = [
+    {
+        "name": "1. 경복궁",
+        "english": "Gyeongbokgung Palace",
+        "category": "역사·문화",
+        "lat": 37.5796, "lon": 126.9770,
+        "description": "조선 왕조의 대표 궁궐입니다. 아름다운 전통 건축과 수문장 교대식을 볼 수 있어요."
+    },
+    {
+        "name": "2. 남산서울타워",
+        "english": "N Seoul Tower",
+        "category": "전망·야경",
+        "lat": 37.5512, "lon": 126.9882,
+        "description": "서울의 전경을 한눈에 볼 수 있는 전망 명소입니다. 특히 야경이 아름답습니다."
+    },
+    {
+        "name": "3. 명동",
+        "english": "Myeongdong",
+        "category": "쇼핑·먹거리",
+        "lat": 37.5636, "lon": 126.9850,
+        "description": "화장품 매장과 패션 상점, 길거리 음식이 많아 외국인 관광객에게 인기가 높습니다."
+    },
+    {
+        "name": "4. 북촌한옥마을",
+        "english": "Bukchon Hanok Village",
+        "category": "전통·문화",
+        "lat": 37.5826, "lon": 126.9830,
+        "description": "전통 한옥이 모여 있는 동네입니다. 골목을 걸으며 한국의 옛 주거 문화를 느낄 수 있어요."
+    },
+    {
+        "name": "5. 인사동",
+        "english": "Insadong",
+        "category": "전통·예술",
+        "lat": 37.5710, "lon": 126.9850,
+        "description": "전통 공예품과 기념품, 찻집, 갤러리를 만날 수 있는 한국 문화 거리입니다."
+    },
+    {
+        "name": "6. 동대문디자인플라자(DDP)",
+        "english": "Dongdaemun Design Plaza",
+        "category": "건축·쇼핑",
+        "lat": 37.5671, "lon": 127.0095,
+        "description": "독특한 곡선형 건축물로 유명합니다. 전시와 디자인 행사, 야간 산책을 즐길 수 있습니다."
+    },
+    {
+        "name": "7. 홍대거리",
+        "english": "Hongdae",
+        "category": "문화·엔터테인먼트",
+        "lat": 37.5563, "lon": 126.9236,
+        "description": "젊은 문화와 거리 공연, 개성 있는 상점과 카페가 모여 있는 활기찬 거리입니다."
+    },
+    {
+        "name": "8. 롯데월드",
+        "english": "Lotte World",
+        "category": "테마파크",
+        "lat": 37.5111, "lon": 127.0982,
+        "description": "실내외 놀이시설과 퍼레이드를 즐길 수 있는 대형 테마파크입니다."
+    },
+    {
+        "name": "9. 광장시장",
+        "english": "Gwangjang Market",
+        "category": "시장·음식",
+        "lat": 37.5700, "lon": 126.9997,
+        "description": "빈대떡과 김밥 등 다양한 한국 음식을 맛볼 수 있는 전통시장입니다."
+    },
+    {
+        "name": "10. 청계천",
+        "english": "Cheonggyecheon Stream",
+        "category": "산책·휴식",
+        "lat": 37.5692, "lon": 126._i0000,
+        "description": "도심을 흐르는 산책 공간입니다. 물길을 따라 걷거나 계절별 조명을 감상하기 좋습니다."
+    },
+]
+
+# 좌표 오타 방지: 청계천 대표 지점
+places[-1]["lon"] = 126.9780
+
+# 지도 생성
+seoul_map = folium.Map(
+    location=[37.5665, 126.9780],
+    zoom_start=12,
+    tiles="OpenStreetMap"
+)
+
+for place in places:
+    popup_html = f"""
+    <div style="width:220px">
+      <b>{place['name']}</b><br>
+      <i>{place['english']}</i><br>
+      <span>{place['category']}</span><br><br>
+      {place['description']}
+    </div>
+    """
+    folium.Marker(
+        location=[place["lat"], place["lon"]],
+        tooltip=place["name"],
+        popup=folium.Popup(popup_html, max_width=280),
+        icon=folium.Icon(color="red", icon="info-sign")
+    ).add_to(seoul_map)
+
+st.subheader("📍 서울 관광지 위치")
+st.caption("마커를 누르면 관광지 이름과 간단한 설명을 볼 수 있습니다.")
+st_folium(seoul_map, width=None, height=580, use_container_width=True)
+
+st.divider()
+st.subheader("✨ 관광지 TOP 10 소개")
+
+# 2열 카드형 소개
+for start in range(0, len(places), 2):
+    cols = st.columns(2)
+    for col, place in zip(cols, places[start:start + 2]):
+        with col:
+            st.markdown(f"### {place['name']}")
+            st.caption(f"{place['english']} · {place['category']}")
+            st.write(place["description"])
+
+st.info(
+    "안내: 이 목록은 외국인 여행자에게 잘 알려진 서울의 대표 명소를 소개하기 위한 "
+    "추천 목록이며, 공식 방문객 순위나 실시간 인기 순위를 의미하지 않습니다. "
+    "방문 전 운영 시간과 휴무일을 확인하세요."
+)
+
+st.markdown("---")
+st.caption("서울 여행을 더 즐겁게! 🇰🇷")
+'''
+
+# Fix accidental invalid numeric token in source before writing
+app_code = app_code.replace('126._i0000', '126.9780')
+
+requirements = """streamlit>=1.32.0
+folium>=0.15.1
+streamlit-folium>=0.18.0
+"""
+
+readme = """# 서울 관광 명소 TOP 10 Streamlit 앱
+
+## 파일
+- `app.py`: Streamlit 웹 앱
+- `requirements.txt`: 필요한 파이썬 패키지
+
+## Streamlit Community Cloud 배포 방법
+1. GitHub에 새 저장소를 만듭니다.
+2. `app.py`와 `requirements.txt`를 저장소 최상위 폴더에 업로드합니다.
+3. https://share.streamlit.io/ 에 접속해 GitHub 저장소를 연결합니다.
+4. Main file path에 `app.py`를 입력하고 Deploy를 누릅니다.
+
+지도는 Folium의 OpenStreetMap 타일을 사용하며, 앱이 실행될 때 웹에서 지도를 불러옵니다.
+별도의 지도 이미지 파일은 필요하지 않습니다.
+"""
+
+os.makedirs("/mnt/data/seoul_tourism_app", exist_ok=True)
+with open("/mnt/data/seoul_tourism_app/app.py", "w", encoding="utf-8") as f:
+    f.write(app_code)
+with open("/mnt/data/seoul_tourism_app/requirements.txt", "w", encoding="utf-8") as f:
+    f.write(requirements)
+with open("/mnt/data/seoul_tourism_app/README.md", "w", encoding="utf-8") as f:
+    f.write(readme)
+
+zip_path = "/mnt/data/seoul_tourism_streamlit.zip"
+with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as z:
+    for filename in ["app.py", "requirements.txt", "README.md"]:
+        z.write(f"/mnt/data/seoul_tourism_app/{filename}", arcname=filename)
+
+print(zip_path)
