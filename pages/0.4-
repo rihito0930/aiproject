@@ -1,0 +1,7 @@
+project/
+│
+├── population (1).csv
+├── requirements.txt
+│
+└── pages/
+    └── app.py
